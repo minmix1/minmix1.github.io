@@ -4,416 +4,398 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>minmix.</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #080808;
+            --surface: #0e0e0e;
+            --surface-hover: #151515;
+            --border: #222222;
+            --border-hover: #444444;
+            --text: #ededed;
+            --muted: #737373;
+            --accent: #dc2626;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Space Grotesk', sans-serif;
         }
 
         body {
             min-height: 100vh;
-            background-color: #07070a;
-            color: #ffffff;
+            background-color: var(--bg);
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            background-size: 36px 36px;
+            color: var(--text);
+            font-family: 'Inter', -apple-system, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
-            position: relative;
             padding: 20px;
+            overflow-x: hidden;
         }
 
-        /* Экран входа (Click to enter) */
-        .enter-overlay {
+        /* Экран входа */
+        .enter-screen {
             position: fixed;
             inset: 0;
-            background: rgba(7, 7, 10, 0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: #050505;
             z-index: 100;
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
         }
 
-        .enter-overlay.hidden {
+        .enter-screen.hidden {
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
         }
 
-        .enter-text {
-            font-size: 18px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            color: #fff;
-            text-shadow: 0 0 15px rgba(6, 182, 212, 0.8);
-            padding: 14px 28px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 99px;
-            background: rgba(255, 255, 255, 0.03);
-            animation: enterPulse 2s infinite ease-in-out;
-            transition: transform 0.2s, border-color 0.2s;
+        .enter-prompt {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+            transition: color 0.2s ease;
         }
 
-        .enter-overlay:hover .enter-text {
-            transform: scale(1.05);
-            border-color: #06b6d4;
+        .enter-prompt span {
+            color: var(--text);
         }
 
-        @keyframes enterPulse {
-            0%, 100% { box-shadow: 0 0 15px rgba(124, 58, 237, 0.3); }
-            50% { box-shadow: 0 0 30px rgba(6, 182, 212, 0.6); }
+        .enter-screen:hover .enter-prompt {
+            color: var(--text);
         }
 
-        /* Плавающие неоновые пятна на фоне */
-        .bg-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(90px);
-            opacity: 0.45;
-            z-index: 0;
-            animation: float 10s infinite ease-in-out alternate;
-        }
-        .orb-1 {
-            width: 300px;
-            height: 300px;
-            background: #7c3aed;
-            top: 10%;
-            left: 15%;
-        }
-        .orb-2 {
-            width: 350px;
-            height: 350px;
-            background: #06b6d4;
-            bottom: 10%;
-            right: 15%;
-            animation-delay: -5s;
-        }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(40px, -40px) scale(1.1); }
-        }
-
-        /* Контейнер для 3D эффекта и анимации появления */
-        .card-wrapper {
-            perspective: 1200px;
-            z-index: 10;
+        /* Основной контейнер */
+        .container {
             width: 100%;
-            max-width: 410px;
+            max-width: 440px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
             opacity: 0;
-            transform: scale(0.92) translateY(20px);
-            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateY(10px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
-        .card-wrapper.entered {
+        .container.visible {
             opacity: 1;
-            transform: scale(1) translateY(0);
+            transform: translateY(0);
         }
 
-        /* Сама карточка */
-        .card {
-            background: rgba(16, 16, 24, 0.92);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 24px;
-            padding: 30px 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-            transition: transform 0.18s ease-out;
-            position: relative;
-        }
-
-        /* Шапка профиля */
-        .profile {
+        /* Верхняя строка состояния */
+        .top-bar {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            text-align: center;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
         }
 
-        .avatar-box {
-            position: relative;
-            width: 90px;
-            height: 90px;
-            margin-bottom: 14px;
+        .status-live {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text);
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* Блок профиля */
+        .profile-section {
+            padding: 20px 18px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid var(--border);
         }
 
         .avatar {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #7c3aed, #06b6d4);
-            padding: 3px;
-            box-shadow: 0 0 25px rgba(124, 58, 237, 0.45);
-        }
-
-        .avatar-inner {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            background: #111118;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 34px;
-            font-weight: 700;
-            color: #fff;
-            overflow: hidden;
-        }
-
-        .avatar-inner img {
-            width: 100%;
-            height: 100%;
+            width: 68px;
+            height: 68px;
+            border-radius: 4px;
+            border: 1px solid var(--border-hover);
             object-fit: cover;
+            flex-shrink: 0;
+            background: #141414;
         }
 
-        .status-dot {
-            position: absolute;
-            bottom: 4px;
-            right: 4px;
-            width: 16px;
-            height: 16px;
-            background: #10b981;
-            border: 3px solid #101018;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #10b981;
-            animation: pulse 2s infinite;
+        .profile-info {
+            min-width: 0;
         }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-
-        h1 {
-            font-size: 24px;
+        .nickname {
+            font-size: 20px;
             font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 6px;
+            letter-spacing: -0.4px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
+        .tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--accent);
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            background: rgba(220, 38, 38, 0.08);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
         .bio {
-            font-size: 14px;
-            color: #9ca3af;
-            min-height: 22px;
-            margin-bottom: 18px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            min-height: 18px;
         }
 
         .cursor {
             display: inline-block;
-            width: 2px;
-            height: 14px;
-            background: #06b6d4;
+            width: 6px;
+            height: 12px;
+            background: var(--accent);
             vertical-align: middle;
-            animation: blink 0.8s infinite;
+            margin-left: 2px;
+            animation: blink 0.9s steps(1) infinite;
         }
 
         @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
         }
 
-        /* Переключатель вкладок */
-        .tabs {
+        /* Вкладки */
+        .nav-tabs {
             display: flex;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 4px;
-            border-radius: 12px;
-            margin-bottom: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid var(--border);
         }
 
-        .tab-btn {
+        .nav-btn {
             flex: 1;
-            padding: 8px 0;
-            border: none;
             background: transparent;
-            color: #9ca3af;
-            font-size: 13px;
-            font-weight: 600;
-            border-radius: 9px;
+            border: none;
+            padding: 11px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: color 0.15s ease, background 0.15s ease;
+            border-bottom: 2px solid transparent;
         }
 
-        .tab-btn.active {
-            background: rgba(255, 255, 255, 0.12);
-            color: #fff;
+        .nav-btn:first-child {
+            border-right: 1px solid var(--border);
         }
 
-        /* Контент вкладок */
-        .tab-content {
+        .nav-btn:hover {
+            color: var(--text);
+            background: var(--surface-hover);
+        }
+
+        .nav-btn.active {
+            color: var(--text);
+            background: #121212;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        /* Контент */
+        .content {
+            padding: 16px 18px;
+        }
+
+        .tab-panel {
             display: none;
-            animation: fadeIn 0.25s ease;
         }
 
-        .tab-content.active {
+        .tab-panel.active {
             display: block;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Кнопки-ссылки */
-        .links {
+        /* Ссылки */
+        .link-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
 
-        .link-btn {
+        .link-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 13px 16px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            color: #fff;
+            padding: 12px 14px;
+            background: #0b0b0b;
+            border: 1px solid var(--border);
+            border-radius: 4px;
             text-decoration: none;
+            color: var(--text);
             font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s ease;
+            font-weight: 500;
+            transition: border-color 0.15s ease, background 0.15s ease;
         }
 
-        .link-btn:hover {
-            background: rgba(255, 255, 255, 0.09);
-            border-color: rgba(6, 182, 212, 0.6);
-            transform: translateY(-2px);
+        .link-row:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-hover);
         }
 
         .link-left {
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-
-        .link-arrow {
-            color: #6b7280;
-            transition: transform 0.2s, color 0.2s;
-        }
-
-        .link-btn:hover .link-arrow {
-            transform: translateX(4px);
-            color: #06b6d4;
-        }
-
-        /* Блок Прайс / Услуги */
-        .services-list {
-            display: flex;
-            flex-direction: column;
             gap: 10px;
         }
 
-        .service-item {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 14px 16px;
+        .link-left svg {
+            color: var(--muted);
+            transition: color 0.15s ease;
+        }
+
+        .link-row:hover .link-left svg {
+            color: var(--text);
+        }
+
+        .link-handle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        /* Прайс */
+        .price-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .price-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
-            transition: border-color 0.2s;
+            padding: 12px 14px;
+            background: #0b0b0b;
+            border: 1px solid var(--border);
+            border-radius: 4px;
         }
 
-        .service-item:hover {
-            border-color: rgba(124, 58, 237, 0.6);
+        .price-row:hover {
+            border-color: var(--border-hover);
         }
 
-        .service-info h3 {
-            font-size: 14px;
+        .price-title {
+            font-size: 13px;
             font-weight: 600;
             margin-bottom: 3px;
         }
 
-        .service-info p {
+        .price-desc {
             font-size: 12px;
-            color: #9ca3af;
+            color: var(--muted);
         }
 
-        .service-right {
+        .price-action {
             display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 6px;
+            align-items: center;
+            gap: 10px;
             flex-shrink: 0;
         }
 
-        .price-tag {
-            font-size: 14px;
+        .price-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
             font-weight: 700;
-            color: #06b6d4;
+            color: var(--text);
         }
 
-        .order-link {
+        .buy-btn {
+            font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
-            font-weight: 600;
-            color: #fff;
-            background: rgba(124, 58, 237, 0.45);
-            padding: 4px 10px;
-            border-radius: 6px;
+            color: var(--text);
+            background: #1a1a1a;
+            border: 1px solid var(--border-hover);
+            padding: 5px 10px;
+            border-radius: 3px;
             text-decoration: none;
-            transition: background 0.2s;
+            transition: background 0.15s ease, border-color 0.15s ease;
         }
 
-        .order-link:hover {
-            background: #7c3aed;
+        .buy-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
         }
 
-        /* Виджет "Копировать контакт" */
-        .footer-action {
-            margin-top: 18px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        /* Подвал */
+        .footer {
+            padding: 12px 18px;
+            border-top: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 13px;
-            color: #9ca3af;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .footer b {
+            color: var(--text);
+            font-weight: 500;
         }
 
         .copy-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: none;
-            color: #fff;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 3px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: color 0.15s ease, border-color 0.15s ease;
         }
 
         .copy-btn:hover {
-            background: #7c3aed;
+            color: var(--text);
+            border-color: var(--border-hover);
         }
 
         /* Уведомление */
         .toast {
             position: fixed;
-            bottom: 24px;
+            bottom: 20px;
             left: 50%;
-            transform: translateX(-50%) translateY(80px);
-            background: #10b981;
+            transform: translateX(-50%) translateY(60px);
+            background: var(--text);
             color: #000;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
             font-weight: 700;
-            font-size: 13px;
-            padding: 10px 20px;
-            border-radius: 99px;
+            padding: 8px 16px;
+            border-radius: 3px;
             opacity: 0;
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            transition: all 0.25s ease;
             z-index: 200;
         }
+
         .toast.show {
             transform: translateX(-50%) translateY(0);
             opacity: 1;
@@ -422,191 +404,165 @@
 </head>
 <body>
 
-    <!-- Экран входа -->
-    <div class="enter-overlay" id="enterOverlay" onclick="enterSite()">
-        <div class="enter-text">[ нажми, чтобы войти ]</div>
+    <div class="enter-screen" id="enterScreen" onclick="enterSite()">
+        <div class="enter-prompt">[ <span>click anywhere</span> ]</div>
     </div>
 
-    <div class="bg-orb orb-1"></div>
-    <div class="bg-orb orb-2"></div>
+    <div class="container" id="mainCard">
+        <div class="top-bar">
+            <div class="status-live"><span class="dot"></span> minmix.</div>
+            <div id="clock">00:00:00</div>
+        </div>
 
-    <div class="card-wrapper" id="wrapper">
-        <div class="card" id="card">
-            <div class="profile">
-                <div class="avatar-box">
-                    <div class="avatar">
-                        <div class="avatar-inner">
-                            <img src="https://i.postimg.cc/6pRvxkzZ/reina.jpg" alt="avatar">
-                        </div>
-                    </div>
-                    <div class="status-dot" title="Онлайн"></div>
-                </div>
-
-                <h1>minmix.</h1>
+        <div class="profile-section">
+            <img class="avatar" src="https://i.postimg.cc/6pRvxkzZ/reina.jpg" alt="avatar">
+            <div class="profile-info">
+                <div class="nickname">minmix. <span class="tag">USER</span></div>
                 <div class="bio"><span id="typewriter"></span><span class="cursor"></span></div>
             </div>
+        </div>
 
-            <!-- Переключатель вкладок -->
-            <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('links', this)">Ссылки</button>
-                <button class="tab-btn" onclick="switchTab('services', this)">Прайс</button>
-            </div>
+        <div class="nav-tabs">
+            <button class="nav-btn active" onclick="openTab('links', this)">/links</button>
+            <button class="nav-btn" onclick="openTab('price', this)">/price</button>
+        </div>
 
-            <!-- Вкладка 1: Ссылки -->
-            <div id="tab-links" class="tab-content active">
-                <div class="links">
-                    <a href="https://t.me/minmix1" target="_blank" class="link-btn">
+        <div class="content">
+            <!-- Вкладка Ссылки -->
+            <div id="tab-links" class="tab-panel active">
+                <div class="link-list">
+                    <a href="https://t.me/minmix1" target="_blank" class="link-row">
                         <div class="link-left">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                            <span>Telegram (@minmix1)</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                            <span>Telegram</span>
                         </div>
-                        <span class="link-arrow">→</span>
+                        <span class="link-handle">@minmix1 ↗</span>
                     </a>
 
-                    <a href="https://www.instagram.com/minmix0/?hl=ru" target="_blank" class="link-btn">
+                    <a href="https://www.instagram.com/minmix0/?hl=ru" target="_blank" class="link-row">
                         <div class="link-left">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                             <span>Instagram</span>
                         </div>
-                        <span class="link-arrow">→</span>
+                        <span class="link-handle">@minmix0 ↗</span>
                     </a>
 
-                    <a href="https://www.tiktok.com/@minmix_0" target="_blank" class="link-btn">
+                    <a href="https://www.tiktok.com/@minmix_0" target="_blank" class="link-row">
                         <div class="link-left">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
                             <span>TikTok</span>
                         </div>
-                        <span class="link-arrow">→</span>
+                        <span class="link-handle">@minmix_0 ↗</span>
                     </a>
                 </div>
             </div>
 
-            <!-- Вкладка 2: Прайс -->
-            <div id="tab-services" class="tab-content">
-                <div class="services-list">
-                    <!-- Заглушка для 1-го пункта -->
-                    <div class="service-item">
-                        <div class="service-info">
-                            <h3>Унизить женщину</h3>
-                            <p>Довожу женщину до слёз</p>
+            <!-- Вкладка Прайс -->
+            <div id="tab-price" class="tab-panel">
+                <div class="price-list">
+                    <!-- 1-й пункт: впиши свой текст -->
+                    <div class="price-row">
+                        <div>
+                            <div class="price-title">Унижаю женщину</div>
+                            <div class="price-desc">довожу до слёз женщину</div>
                         </div>
-                        <div class="service-right">
-                            <span class="price-tag">$5</span>
-                            <a href="https://t.me/minmix1" target="_blank" class="order-link">Заказать</a>
-                        </div>
-                    </div>
-
-                    <div class="service-item">
-                        <div class="service-info">
-                            <h3>Порыгать в войсе дискорда</h3>
-                            <p>1 минуту рыгаю в войсе дискорда</p>
-                        </div>
-                        <div class="service-right">
-                            <span class="price-tag">$10</span>
-                            <a href="https://t.me/minmix1" target="_blank" class="order-link">Заказать</a>
+                        <div class="price-action">
+                            <span class="price-val">$5</span>
+                            <a href="https://t.me/minmix1" target="_blank" class="buy-btn">buy</a>
                         </div>
                     </div>
 
-                    <div class="service-item">
-                        <div class="service-info">
-                            <h3>Дам поцеловать свои ролексы</h3>
-                            <p>Даю возможность поцеловать мои ролексы</p>
+                    <div class="price-row">
+                        <div>
+                            <div class="price-title">Порыгать в войсе дискорда</div>
+                            <div class="price-desc">1 минуту рыгаю в войсе дискорда</div>
                         </div>
-                        <div class="service-right">
-                            <span class="price-tag">$25</span>
-                            <a href="https://t.me/minmix1" target="_blank" class="order-link">Заказать</a>
+                        <div class="price-action">
+                            <span class="price-val">$10</span>
+                            <a href="https://t.me/minmix1" target="_blank" class="buy-btn">buy</a>
+                        </div>
+                    </div>
+
+                    <div class="price-row">
+                        <div>
+                            <div class="price-title">Дам поцеловать свои ролексы</div>
+                            <div class="price-desc">Даю возможность поцеловать мои ролексы</div>
+                        </div>
+                        <div class="price-action">
+                            <span class="price-val">$25</span>
+                            <a href="https://t.me/minmix1" target="_blank" class="buy-btn">buy</a>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="footer-action">
-                <span>Discord: <b>laces6999</b></span>
-                <button class="copy-btn" onclick="copyContact('laces6999')">Копировать</button>
-            </div>
+        <div class="footer">
+            <span>dc: <b>laces6999</b></span>
+            <button class="copy-btn" onclick="copyDiscord('laces6999')">copy</button>
         </div>
     </div>
 
-    <div class="toast" id="toast">Скопировано в буфер!</div>
+    <div class="toast" id="toast">copied to clipboard</div>
 
     <script>
-        // 1. Вход на сайт
-        let hasEntered = false;
+        // Вход
+        let entered = false;
         function enterSite() {
-            if (hasEntered) return;
-            hasEntered = true;
-            document.getElementById('enterOverlay').classList.add('hidden');
-            document.getElementById('wrapper').classList.add('entered');
-            setTimeout(typeEffect, 400);
+            if (entered) return;
+            entered = true;
+            document.getElementById('enterScreen').classList.add('hidden');
+            document.getElementById('mainCard').classList.add('visible');
+            setTimeout(typeEffect, 300);
         }
 
-        // 2. Переключение вкладок
-        function switchTab(tabName, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
+        // Часы
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = now.toLocaleTimeString('ru-RU', { hour12: false });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Вкладки
+        function openTab(name, btn) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('tab-' + tabName).classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
         }
 
-        // 3. Эффект печатной машинки
+        // Печатный текст
         const phrases = [
             "Занимаюсь грязными делами",
             "Незаконными."
         ];
-        
-        let phraseIndex = 0;
-        let charIndex = 0;
-        let isDeleting = false;
+        let pIdx = 0, cIdx = 0, del = false;
         const typeEl = document.getElementById('typewriter');
 
         function typeEffect() {
-            const currentPhrase = phrases[phraseIndex];
-            if (isDeleting) {
-                typeEl.textContent = currentPhrase.substring(0, charIndex - 1);
-                charIndex--;
-            } else {
-                typeEl.textContent = currentPhrase.substring(0, charIndex + 1);
-                charIndex++;
-            }
+            const cur = phrases[pIdx];
+            typeEl.textContent = del ? cur.substring(0, cIdx - 1) : cur.substring(0, cIdx + 1);
+            cIdx += del ? -1 : 1;
 
-            let speed = isDeleting ? 40 : 75;
-            if (!isDeleting && charIndex === currentPhrase.length) {
+            let speed = del ? 35 : 70;
+            if (!del && cIdx === cur.length) {
                 speed = 2000;
-                isDeleting = true;
-            } else if (isDeleting && charIndex === 0) {
-                isDeleting = false;
-                phraseIndex = (phraseIndex + 1) % phrases.length;
+                del = true;
+            } else if (del && cIdx === 0) {
+                del = false;
+                pIdx = (pIdx + 1) % phrases.length;
                 speed = 400;
             }
             setTimeout(typeEffect, speed);
         }
 
-        // 4. Мягкий 3D наклон карточки
-        const wrapper = document.getElementById('wrapper');
-        const card = document.getElementById('card');
-
-        wrapper.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            const rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -5;
-            const rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 5;
-
-            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-        });
-
-        wrapper.addEventListener('mouseleave', () => {
-            card.style.transform = `rotateX(0deg) rotateY(0deg)`;
-        });
-
-        // 5. Копирование контакта
-        function copyContact(text) {
+        // Копирование
+        function copyDiscord(text) {
             navigator.clipboard.writeText(text);
-            const toast = document.getElementById('toast');
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
+            const t = document.getElementById('toast');
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 1800);
         }
     </script>
 </body>
