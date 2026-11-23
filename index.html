@@ -636,15 +636,20 @@
         }
 
         // Счётчик просмотров
-        fetch('https://abacus.jasoncameron.dev/hit/minmix1.github.io/visits')
+        const viewsEl = document.getElementById('viewsCount');
+        const savedViews = localStorage.getItem('minmix_views');
+        if (savedViews) viewsEl.textContent = savedViews;
+
+        fetch('https://countapi.mileshilliard.com/api/v1/hit/minmix1_github_io_v1')
             .then(res => res.json())
             .then(data => {
                 if (data && data.value !== undefined) {
-                    document.getElementById('viewsCount').textContent = data.value;
+                    viewsEl.textContent = data.value;
+                    localStorage.setItem('minmix_views', data.value);
                 }
             })
             .catch(() => {
-                document.getElementById('viewsCount').textContent = '1';
+                if (!savedViews) viewsEl.textContent = '1';
             });
 
         // Живой статус Discord через Lanyard API
