@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>minmix.</title>
+
+    <!-- Иконка во вкладке браузера -->
+    <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/6pRvxkzZ/reina.jpg">
+
+    <!-- Красивое превью (Embed) для Discord и Telegram -->
+    <meta name="theme-color" content="#dc2626">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://minmix1.github.io">
+    <meta property="og:title" content="minmix.">
+    <meta property="og:description" content="Занимаюсь грязными делами. Незаконными.">
+    <meta property="og:image" content="https://i.postimg.cc/6pRvxkzZ/reina.jpg">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -101,22 +113,37 @@
             font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
             color: var(--muted);
-            text-transform: uppercase;
         }
 
         .status-live {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
             color: var(--text);
+            text-transform: uppercase;
         }
 
         .dot {
-            width: 6px;
-            height: 6px;
+            width: 7px;
+            height: 7px;
             background: var(--accent);
             border-radius: 50%;
             display: inline-block;
+            transition: background 0.3s ease;
+        }
+
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .views-badge {
+            color: var(--muted);
+        }
+
+        .views-badge span {
+            color: var(--text);
         }
 
         /* Блок профиля */
@@ -183,6 +210,33 @@
         @keyframes blink {
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0; }
+        }
+
+        /* Строка активности Discord / Spotify */
+        .activity-bar {
+            display: none;
+            padding: 9px 18px;
+            border-bottom: 1px solid var(--border);
+            background: #0b0b0b;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .activity-bar.active {
+            display: block;
+        }
+
+        .activity-label {
+            color: var(--accent);
+            margin-right: 6px;
+        }
+
+        .activity-text {
+            color: var(--text);
         }
 
         /* Вкладки */
@@ -410,8 +464,16 @@
 
     <div class="container" id="mainCard">
         <div class="top-bar">
-            <div class="status-live"><span class="dot"></span> minmix.</div>
-            <div id="clock">00:00:00</div>
+            <div class="status-live">
+                <span class="dot" id="statusDot"></span>
+                <span>minmix.</span>
+                <span id="statusText" style="color: var(--muted); font-size: 10px;"></span>
+            </div>
+            <div class="top-right">
+                <span class="views-badge">views:<span id="viewsCount">...</span></span>
+                <span>//</span>
+                <span id="clock">00:00:00</span>
+            </div>
         </div>
 
         <div class="profile-section">
@@ -420,6 +482,11 @@
                 <div class="nickname">minmix. <span class="tag">USER</span></div>
                 <div class="bio"><span id="typewriter"></span><span class="cursor"></span></div>
             </div>
+        </div>
+
+        <div class="activity-bar" id="activityBar">
+            <span class="activity-label" id="activityLabel">[activity]</span>
+            <span class="activity-text" id="activityText"></span>
         </div>
 
         <div class="nav-tabs">
@@ -464,7 +531,7 @@
                     <div class="price-row">
                         <div>
                             <div class="price-title">Унижаю женщину</div>
-                            <div class="price-desc">довожу до слёз женщину</div>
+                            <div class="price-desc">довожу женщину до слёз</div>
                         </div>
                         <div class="price-action">
                             <span class="price-val">$5</span>
@@ -506,6 +573,9 @@
     <div class="toast" id="toast">copied to clipboard</div>
 
     <script>
+        // ВСТАВЬ СВОЙ DISCORD ID СЮДА (только цифры) для живого статуса:
+        const DISCORD_ID = "729986536246083655";
+
         // Вход
         let entered = false;
         function enterSite() {
@@ -564,6 +634,67 @@
             t.classList.add('show');
             setTimeout(() => t.classList.remove('show'), 1800);
         }
+
+        // Счётчик просмотров
+        fetch('https://abacus.jasoncameron.dev/hit/minmix1.github.io/visits')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.value !== undefined) {
+                    document.getElementById('viewsCount').textContent = data.value;
+                }
+            })
+            .catch(() => {
+                document.getElementById('viewsCount').textContent = '1';
+            });
+
+        // Живой статус Discord через Lanyard API
+        async function fetchDiscordStatus() {
+            if (!DISCORD_ID || DISCORD_ID === "ТВОЙ_DISCORD_ID") return;
+            try {
+                const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_ID}`);
+                const json = await res.json();
+                if (!json.success) return;
+
+                const data = json.data;
+                const colors = {
+                    online: '#22c55e',
+                    idle: '#eab308',
+                    dnd: '#ef4444',
+                    offline: '#525252'
+                };
+                const labels = {
+                    online: '[online]',
+                    idle: '[idle]',
+                    dnd: '[dnd]',
+                    offline: '[offline]'
+                };
+
+                document.getElementById('statusDot').style.background = colors[data.discord_status] || '#dc2626';
+                document.getElementById('statusText').textContent = labels[data.discord_status] || '';
+
+                const bar = document.getElementById('activityBar');
+                const label = document.getElementById('activityLabel');
+                const text = document.getElementById('activityText');
+
+                if (data.listening_to_spotify && data.spotify) {
+                    label.textContent = '[spotify]';
+                    text.textContent = `${data.spotify.song} — ${data.spotify.artist}`;
+                    bar.classList.add('active');
+                } else {
+                    const game = data.activities && data.activities.find(a => a.type === 0);
+                    if (game) {
+                        label.textContent = '[playing]';
+                        text.textContent = game.name + (game.details ? ` (${game.details})` : '');
+                        bar.classList.add('active');
+                    } else {
+                        bar.classList.remove('active');
+                    }
+                }
+            } catch (e) {}
+        }
+
+        fetchDiscordStatus();
+        setInterval(fetchDiscordStatus, 15000);
     </script>
 </body>
 </html>
